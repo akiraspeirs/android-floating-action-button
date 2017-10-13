@@ -14,6 +14,7 @@ import android.util.AttributeSet;
 
 public class AddFloatingActionButton extends FloatingActionButton {
   int mPlusColor;
+  int mIconSize;
 
   public AddFloatingActionButton(Context context) {
     this(context, null);
@@ -60,8 +61,23 @@ public class AddFloatingActionButton extends FloatingActionButton {
   }
 
   @Override
+  protected void updateCircleSize() {
+    super.updateCircleSize();
+    if (mCustomSize > 0) {
+      mCircleSize = mCustomSize;
+    }
+  }
+
+  public void setCustomSize(float size){
+    mCustomSize = size;
+    updateCircleSize();
+    updateDrawableSize();
+    updateBackground();
+  }
+
+  @Override
   Drawable getIconDrawable() {
-    final float iconSize = getDimension(R.dimen.fab_icon_size);
+    final float iconSize = mIconSize > 0 ? mIconSize : getDimension(R.dimen.fab_icon_size);
     final float iconHalfSize = iconSize / 2f;
 
     final float plusSize = getDimension(R.dimen.fab_plus_icon_size);

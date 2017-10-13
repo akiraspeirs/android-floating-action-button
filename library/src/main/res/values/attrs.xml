@@ -22,6 +22,9 @@
             <enum name="normal" value="0"/>
             <enum name="mini" value="1"/>
         </attr>
+        <attr name="fab_addButtonCustomSize" format="dimension"/>
+        <attr name="fab_addButtonOpenTitle" format="string"/>
+        <attr name="fab_addButtonUseFullIcon" format="boolean"/>
         <attr name="fab_addButtonPlusIconColor" format="color"/>
         <attr name="fab_addButtonStrokeVisible" format="boolean"/>
         <attr name="fab_addButtonIcon" format="reference"/>

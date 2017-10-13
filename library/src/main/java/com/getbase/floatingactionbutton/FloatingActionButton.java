@@ -49,13 +49,15 @@ public class FloatingActionButton extends ImageButton {
   @DrawableRes
   private int mIcon;
   private Drawable mIconDrawable;
-  private int mSize;
+  public int mSize;
 
-  private float mCircleSize;
+  protected float mCircleSize;
   private float mShadowRadius;
   private float mShadowOffset;
   private int mDrawableSize;
   boolean mStrokeVisible;
+  float mCustomSize;
+  boolean mUseFullIcon;
 
   public FloatingActionButton(Context context) {
     this(context, null);
@@ -90,12 +92,23 @@ public class FloatingActionButton extends ImageButton {
     updateBackground();
   }
 
-  private void updateDrawableSize() {
+  protected void updateDrawableSize() {
     mDrawableSize = (int) (mCircleSize + 2 * mShadowRadius);
   }
 
-  private void updateCircleSize() {
-    mCircleSize = getDimension(mSize == SIZE_NORMAL ? R.dimen.fab_size_normal : R.dimen.fab_size_mini);
+  protected void updateCircleSize() {
+    if (mCustomSize > 0) {
+      mCircleSize = mCustomSize;
+    } else {
+      mCircleSize = getDimension(mSize == SIZE_NORMAL ? R.dimen.fab_size_normal : R.dimen.fab_size_mini);
+    }
+  }
+
+  public void setCustomSize(float size){
+    mCustomSize = size;
+    updateCircleSize();
+    updateDrawableSize();
+    updateBackground();
   }
 
   public void setSize(@FAB_SIZE int size) {
@@ -122,6 +135,10 @@ public class FloatingActionButton extends ImageButton {
       mIconDrawable = null;
       updateBackground();
     }
+  }
+
+  public void setUseFullIcon(boolean useFullIcon){
+    this.mUseFullIcon = useFullIcon;
   }
 
   public void setIconDrawable(@NonNull Drawable iconDrawable) {
@@ -228,6 +245,8 @@ public class FloatingActionButton extends ImageButton {
   }
 
   void updateBackground() {
+    float iconSize = this.mUseFullIcon ? mCircleSize : getDimension(R.dimen.fab_icon_size);
+
     final float strokeWidth = getDimension(R.dimen.fab_stroke_width);
     final float halfStrokeWidth = strokeWidth / 2f;
 
@@ -239,7 +258,7 @@ public class FloatingActionButton extends ImageButton {
             getIconDrawable()
         });
 
-    int iconOffset = (int) (mCircleSize - getDimension(R.dimen.fab_icon_size)) / 2;
+    int iconOffset = (int) (mCircleSize - iconSize) / 2;
 
     int circleInsetHorizontal = (int) (mShadowRadius);
     int circleInsetTop = (int) (mShadowRadius - mShadowOffset);

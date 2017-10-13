@@ -15,11 +15,13 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.ColorRes;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.TouchDelegate;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
@@ -38,6 +40,9 @@ public class FloatingActionsMenu extends ViewGroup {
   private static final float COLLAPSED_PLUS_ROTATION = 0f;
   private static final float EXPANDED_PLUS_ROTATION = 90f + 45f;
 
+  private String mAddButtonOpenTitle;
+  private float mAddButtonCustomSize;
+  private boolean mAddButtonUseFullIcon;
   private int mAddButtonPlusColor;
   private int mAddButtonColorNormal;
   private int mAddButtonColorPressed;
@@ -67,6 +72,10 @@ public class FloatingActionsMenu extends ViewGroup {
 
   private OnFloatingActionsMenuUpdateListener mListener;
 
+  private TextView mAddLabel;
+
+  public OnClickListener openAddButtonClickListener;
+
   public interface OnFloatingActionsMenuUpdateListener {
     void onMenuExpanded();
     void onMenuCollapsed();
@@ -95,6 +104,9 @@ public class FloatingActionsMenu extends ViewGroup {
     setTouchDelegate(mTouchDelegateGroup);
 
     TypedArray attr = context.obtainStyledAttributes(attributeSet, R.styleable.FloatingActionsMenu, 0, 0);
+    mAddButtonOpenTitle = attr.getString(R.styleable.FloatingActionsMenu_fab_addButtonOpenTitle);
+    mAddButtonCustomSize = attr.getDimension(R.styleable.FloatingActionsMenu_fab_addButtonCustomSize, 0);
+    mAddButtonUseFullIcon = attr.getBoolean(R.styleable.FloatingActionsMenu_fab_addButtonUseFullIcon, false);
     mAddButtonPlusColor = attr.getColor(R.styleable.FloatingActionsMenu_fab_addButtonPlusIconColor, getColor(android.R.color.white));
     mAddButtonColorNormal = attr.getColor(R.styleable.FloatingActionsMenu_fab_addButtonColorNormal, getColor(android.R.color.holo_blue_dark));
     mAddButtonColorPressed = attr.getColor(R.styleable.FloatingActionsMenu_fab_addButtonColorPressed, getColor(android.R.color.holo_blue_light));
@@ -202,9 +214,11 @@ public class FloatingActionsMenu extends ViewGroup {
         mAddButton = new FloatingActionButton(context) {
           @Override
           void updateBackground() {
+            mUseFullIcon = mAddButtonUseFullIcon;
             mColorNormal = mAddButtonColorNormal;
             mColorPressed = mAddButtonColorPressed;
             mStrokeVisible = mAddButtonStrokeVisible;
+            getIconDrawable();
             super.updateBackground();
           }
 
@@ -212,8 +226,8 @@ public class FloatingActionsMenu extends ViewGroup {
           Drawable getIconDrawable() {
             final Resources res = context.getResources();
             final SwitchingDrawable drawable = mAddButtonIconPressed != 0 ?
-                    new SwitchingDrawable(res.getDrawable(mAddButtonIcon), res.getDrawable(mAddButtonIconPressed)) :
-                    new SwitchingDrawable(res.getDrawable(mAddButtonIcon));
+                    new SwitchingDrawable(ContextCompat.getDrawable(context, mAddButtonIcon), ContextCompat.getDrawable(context, mAddButtonIconPressed)) :
+                    new SwitchingDrawable(ContextCompat.getDrawable(context, mAddButtonIcon));
             mAnimatingDrawable = drawable;
             setUpIconAnimation(drawable);
             return drawable;
@@ -240,21 +254,46 @@ public class FloatingActionsMenu extends ViewGroup {
         };
     }
 
+    mAddButton.setUseFullIcon(mAddButtonUseFullIcon);
     mAddButton.setId(R.id.fab_expand_menu_button);
     mAddButton.setSize(mAddButtonSize);
     mAddButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
+        if (isExpanded() && openAddButtonClickListener != null){
+          openAddButtonClickListener.onClick(v);
+        }
         toggle();
       }
     });
+    if (mAddButtonCustomSize > 0){
+      mAddButton.setCustomSize(mAddButtonCustomSize);
+    }
+
+    if (mAddButtonOpenTitle != null){
+      mAddButton.setTitle(mAddButtonOpenTitle);
+    }
 
     addView(mAddButton, super.generateDefaultLayoutParams());
     mButtonsCount++;
+
+
+    String title = mAddButton.getTitle();
+
+    if (title != null &&
+            mAddButton.getTag(R.id.fab_label) == null) {
+
+      mAddLabel = new TextView(context);
+      mAddLabel.setTextAppearance(getContext(), mLabelsStyle);
+      mAddLabel.setText(mAddButton.getTitle());
+      addView(mAddLabel);
+
+  //    mAddButton.setTag(R.id.fab_label, mAddLabel);
+    }
   }
 
   private void setUpIconAnimation(AnimatingDrawable animatingDrawable) {
-    final OvershootInterpolator interpolator = new OvershootInterpolator();
+    final AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
 
     final ObjectAnimator collapseAnimator = ObjectAnimator.ofFloat(animatingDrawable, "progress", 1f, 0f);
     final ObjectAnimator expandAnimator = ObjectAnimator.ofFloat(animatingDrawable, "progress", 0f, 1f);
@@ -264,6 +303,21 @@ public class FloatingActionsMenu extends ViewGroup {
 
     mExpandAnimation.play(expandAnimator);
     mCollapseAnimation.play(collapseAnimator);
+  }
+
+  public void setAddButtonIcon(Context context, int buttonId){
+    mAddButtonIcon = buttonId;
+    mAddButton.setIconDrawable(ContextCompat.getDrawable(context, buttonId));
+  }
+
+  public void setPressdeAddButtonIcon(Context context, int buttonId){
+    mAddButtonIconPressed = buttonId;
+    mAddButton.updateBackground();
+  }
+
+  public void removeAddButtonTitle(){
+    removeView(mAddLabel);
+    mAddLabel = null;
   }
 
   public void addButton(FloatingActionButton button) {
@@ -356,6 +410,7 @@ public class FloatingActionsMenu extends ViewGroup {
     switch (mExpandDirection) {
     case EXPAND_UP:
     case EXPAND_DOWN:
+
       boolean expandUp = mExpandDirection == EXPAND_UP;
 
       if (changed) {
@@ -437,7 +492,7 @@ public class FloatingActionsMenu extends ViewGroup {
             childY - mButtonSpacing :
             childY + child.getMeasuredHeight() + mButtonSpacing;
       }
-      break;
+        break;
 
     case EXPAND_LEFT:
     case EXPAND_RIGHT:
@@ -478,6 +533,96 @@ public class FloatingActionsMenu extends ViewGroup {
       }
 
       break;
+    }
+
+
+    //HACK
+    if (mAddLabel != null) {
+
+      boolean expandUp = mExpandDirection == EXPAND_UP;
+
+      if (changed) {
+        mTouchDelegateGroup.clearTouchDelegates();
+      }
+
+      int addButtonY = expandUp ? b - t - mAddButton.getMeasuredHeight() : 0;
+      // Ensure mAddButton is centered on the line where the buttons should be
+      int buttonsHorizontalCenter = mLabelsPosition == LABELS_ON_LEFT_SIDE
+              ? r - l - mMaxButtonWidth / 2
+              : mMaxButtonWidth / 2;
+      int addButtonLeft = buttonsHorizontalCenter - mAddButton.getMeasuredWidth() / 2;
+      mAddButton.layout(addButtonLeft, addButtonY, addButtonLeft + mAddButton.getMeasuredWidth(), addButtonY + mAddButton.getMeasuredHeight());
+
+      int labelsOffset = mMaxButtonWidth / 2 + mLabelsMargin;
+      int labelsXNearButton = mLabelsPosition == LABELS_ON_LEFT_SIDE
+              ? buttonsHorizontalCenter - labelsOffset
+              : buttonsHorizontalCenter + labelsOffset;
+
+      int nextY = expandUp ?
+              addButtonY - mButtonSpacing :
+              addButtonY + mAddButton.getMeasuredHeight() + mButtonSpacing;
+
+      for (int i = mButtonsCount - 1; i >= 0; i--) {
+        final View child = getChildAt(i);
+
+        if (child == mAddButton || child.getVisibility() == GONE) continue;
+
+        int childX = buttonsHorizontalCenter - child.getMeasuredWidth() / 2;
+        int childY = expandUp ? nextY - child.getMeasuredHeight() : nextY;
+        child.layout(childX, childY, childX + child.getMeasuredWidth(), childY + child.getMeasuredHeight());
+
+        float collapsedTranslation = mAddButton.getMeasuredHeight();
+        float expandedTranslation = 0f;
+
+        child.setTranslationY(mExpanded ? expandedTranslation : collapsedTranslation);
+        child.setAlpha(mExpanded ? 1f : 0f);
+
+        LayoutParams params = (LayoutParams) child.getLayoutParams();
+        params.mCollapseDir.setFloatValues(expandedTranslation, collapsedTranslation);
+        params.mExpandDir.setFloatValues(collapsedTranslation, expandedTranslation);
+        params.setAnimationsTarget(child);
+
+        View label = mAddLabel;
+        if (label != null) {
+          int labelXAwayFromButton = mLabelsPosition == LABELS_ON_LEFT_SIDE
+                  ? labelsXNearButton - label.getMeasuredWidth()
+                  : labelsXNearButton + label.getMeasuredWidth();
+
+          int labelLeft = mLabelsPosition == LABELS_ON_LEFT_SIDE
+                  ? labelXAwayFromButton
+                  : labelsXNearButton;
+
+          int labelRight = mLabelsPosition == LABELS_ON_LEFT_SIDE
+                  ? labelsXNearButton
+                  : labelXAwayFromButton;
+
+      //    int labelTop = childY - mLabelsVerticalOffset + (child.getMeasuredHeight() - label.getMeasuredHeight()) / 2;
+
+          label.layout(labelLeft,
+                  addButtonY + (mAddButton.getMeasuredHeight() / 2) - (label.getMeasuredHeight() / 2) - mLabelsVerticalOffset,
+                  labelRight,
+                  addButtonY + (mAddButton.getMeasuredHeight() / 2) + (label.getMeasuredHeight() / 2));
+
+          Rect touchArea = new Rect(
+                  labelLeft,
+                  addButtonY + (mAddButton.getMeasuredHeight() / 2) - (label.getMeasuredHeight() / 2) - mLabelsVerticalOffset,
+                  labelRight,
+                  addButtonY + (mAddButton.getMeasuredHeight() / 2) + (label.getMeasuredHeight() / 2));
+          mTouchDelegateGroup.addTouchDelegate(new TouchDelegate(touchArea, child));
+
+          label.setTranslationY(mExpanded ? expandedTranslation : collapsedTranslation);
+          label.setAlpha(mExpanded ? 1f : 0f);
+
+          LayoutParams labelParams = (LayoutParams) label.getLayoutParams();
+          labelParams.mCollapseDir.setFloatValues(expandedTranslation, collapsedTranslation);
+          labelParams.mExpandDir.setFloatValues(collapsedTranslation, expandedTranslation);
+          labelParams.setAnimationsTarget(label);
+        }
+
+        nextY = expandUp ?
+                childY - mButtonSpacing :
+                childY + child.getMeasuredHeight() + mButtonSpacing;
+      }
     }
   }
 
@@ -591,18 +736,21 @@ public class FloatingActionsMenu extends ViewGroup {
     Context context = new ContextThemeWrapper(getContext(), mLabelsStyle);
 
     for (int i = 0; i < mButtonsCount; i++) {
-      FloatingActionButton button = (FloatingActionButton) getChildAt(i);
-      String title = button.getTitle();
+      View child = getChildAt(i);
+      if (child instanceof FloatingActionButton ) {
+        FloatingActionButton button = (FloatingActionButton) getChildAt(i);
+        String title = button.getTitle();
 
-      if (button == mAddButton || title == null ||
-          button.getTag(R.id.fab_label) != null) continue;
+        if (button == mAddButton || title == null ||
+                button.getTag(R.id.fab_label) != null) continue;
 
-      TextView label = new TextView(context);
-      label.setTextAppearance(getContext(), mLabelsStyle);
-      label.setText(button.getTitle());
-      addView(label);
+        TextView label = new TextView(context);
+        label.setTextAppearance(getContext(), mLabelsStyle);
+        label.setText(button.getTitle());
+        addView(label);
 
-      button.setTag(R.id.fab_label, label);
+        button.setTag(R.id.fab_label, label);
+      }
     }
   }
 
@@ -630,8 +778,14 @@ public class FloatingActionsMenu extends ViewGroup {
 
   public void toggle() {
     if (mExpanded) {
+      if (mAddLabel != null) {
+        mAddLabel.setVisibility(INVISIBLE);
+      }
       collapse();
     } else {
+      if (mAddLabel != null) {
+        mAddLabel.setVisibility(VISIBLE);
+      }
       expand();
     }
   }
