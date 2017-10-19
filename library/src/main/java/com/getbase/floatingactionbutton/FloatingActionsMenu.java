@@ -315,9 +315,8 @@ public class FloatingActionsMenu extends ViewGroup {
     mAddButton.updateBackground();
   }
 
-  public void removeAddButtonTitle(){
-    removeView(mAddLabel);
-    mAddLabel = null;
+  public void setAddLabelVisibility(int visiblity){
+    mAddLabel.setVisibility(visiblity);
   }
 
   public void addButton(FloatingActionButton button) {
@@ -541,10 +540,6 @@ public class FloatingActionsMenu extends ViewGroup {
 
       boolean expandUp = mExpandDirection == EXPAND_UP;
 
-      if (changed) {
-        mTouchDelegateGroup.clearTouchDelegates();
-      }
-
       int addButtonY = expandUp ? b - t - mAddButton.getMeasuredHeight() : 0;
       // Ensure mAddButton is centered on the line where the buttons should be
       int buttonsHorizontalCenter = mLabelsPosition == LABELS_ON_LEFT_SIDE
@@ -608,7 +603,7 @@ public class FloatingActionsMenu extends ViewGroup {
                   addButtonY + (mAddButton.getMeasuredHeight() / 2) - (label.getMeasuredHeight() / 2) - mLabelsVerticalOffset,
                   labelRight,
                   addButtonY + (mAddButton.getMeasuredHeight() / 2) + (label.getMeasuredHeight() / 2));
-          mTouchDelegateGroup.addTouchDelegate(new TouchDelegate(touchArea, child));
+          mTouchDelegateGroup.addTouchDelegate(new TouchDelegate(touchArea, mAddButton));
 
           label.setTranslationY(mExpanded ? expandedTranslation : collapsedTranslation);
           label.setAlpha(mExpanded ? 1f : 0f);
@@ -617,6 +612,8 @@ public class FloatingActionsMenu extends ViewGroup {
           labelParams.mCollapseDir.setFloatValues(expandedTranslation, collapsedTranslation);
           labelParams.mExpandDir.setFloatValues(collapsedTranslation, expandedTranslation);
           labelParams.setAnimationsTarget(label);
+
+          break;
         }
 
         nextY = expandUp ?
