@@ -40,6 +40,7 @@ public class FloatingActionsMenu extends ViewGroup {
   private static final float COLLAPSED_PLUS_ROTATION = 0f;
   private static final float EXPANDED_PLUS_ROTATION = 90f + 45f;
 
+  private boolean mAddLabelVisibility;
   private String mAddButtonOpenTitle;
   private float mAddButtonCustomSize;
   private boolean mAddButtonUseFullIcon;
@@ -316,7 +317,7 @@ public class FloatingActionsMenu extends ViewGroup {
   }
 
   public void setAddLabelVisibility(int visiblity){
-    mAddLabel.setVisibility(visiblity);
+    mAddLabelVisibility = visiblity;
   }
 
   public void addButton(FloatingActionButton button) {
@@ -781,7 +782,7 @@ public class FloatingActionsMenu extends ViewGroup {
       collapse();
     } else {
       if (mAddLabel != null) {
-        mAddLabel.setVisibility(VISIBLE);
+        mAddLabel.setVisibility(mAddLabelVisibility);
       }
       expand();
     }
