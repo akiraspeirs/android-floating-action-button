@@ -40,7 +40,7 @@ public class FloatingActionsMenu extends ViewGroup {
   private static final float COLLAPSED_PLUS_ROTATION = 0f;
   private static final float EXPANDED_PLUS_ROTATION = 90f + 45f;
 
-  private boolean mAddLabelVisibility;
+  private int mAddLabelVisibility;
   private String mAddButtonOpenTitle;
   private float mAddButtonCustomSize;
   private boolean mAddButtonUseFullIcon;
